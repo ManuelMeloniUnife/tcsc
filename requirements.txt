@@ -1,0 +1,3 @@
+matplotlib
+mplcursors
+pandas
