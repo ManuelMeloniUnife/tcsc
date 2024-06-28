@@ -1,15 +1,37 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from utils import read_speeds_from_file, populate_table
 from grafico import create_plot
 
-# Percorso del file di testo
-file_path = 'data/velocita.txt'
-
-# Legge le velocità dal file
-speeds = read_speeds_from_file(file_path)
 distance_per_revolution = 1.552  # Distanza percorsa in ogni giro ruota in metri
+
+# Inizializzazione della variabile speeds
+speeds = []
+
+# Funzione per aggiornare i dati dal file selezionato
+def update_data(file_path):
+    global speeds
+    speeds = read_speeds_from_file(file_path)
+    populate_table(table, speeds, distance_per_revolution)
+    update_plot()
+
+# Funzione per aggiornare il grafico con i nuovi dati
+def update_plot():
+    global fig, ax, canvas
+    fig, ax = create_plot(speeds, distance_per_revolution)
+    ax.grid(True)
+    canvas.get_tk_widget().pack_forget()
+    canvas = FigureCanvasTkAgg(fig, master=root)
+    canvas.draw()
+    canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+    fig.canvas.mpl_connect('button_press_event', on_plot_click)
+
+# Funzione per aprire un file
+def open_file():
+    file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+    if file_path:
+        update_data(file_path)
 
 # Funzione per gestire il click sulla tabella
 def on_table_click(event):
@@ -67,10 +89,18 @@ def update_table(index):
         table.focus(item)
         table.see(item)
 
-        
 # Creazione della finestra principale
 root = tk.Tk()
 root.title("Tabella e Grafico Metri e Velocità")
+
+# Creazione della barra dei menu
+menu_bar = tk.Menu(root)
+root.config(menu=menu_bar)
+
+# Aggiunta del menu File
+file_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="File", menu=file_menu)
+file_menu.add_command(label="Open", command=open_file)
 
 # Creazione della tabella con bordi visibili alle celle
 style = ttk.Style()
@@ -88,9 +118,6 @@ table.heading("Velocità", text="Speed")
 # Regola la larghezza delle colonne
 table.column("Metri", width=150)
 table.column("Velocità", width=150)
-
-# Popolamento della tabella con i dati
-populate_table(table, speeds, distance_per_revolution)
 
 # Aggiunta del gestore di eventi per il click sulla tabella
 table.bind('<ButtonRelease-1>', on_table_click)
